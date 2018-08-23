@@ -9,8 +9,10 @@ import json
 
 img_ext = ''
 ann_ext = '.json'
+limb_set = [(0,1), (0,2), (0,3), (2,4), (3,5), (1,6), (1,7), (6,8), (7,9), (8,10), (9,11), (1,12), (1,13), (12,14), (13,15), (14,16), (15,17)]
 
 def gaussianOnPt(conf_map_total, point, sigma):
+    
     tmp_map = np.zeros((conf_map_total.shape[0], conf_map_total.shape[1]))
     gridx = np.linspace(-int(sigma * 2), int(sigma * 2), sigma * 4 + 1)
     gridy = np.linspace(-int(sigma * 2), int(sigma * 2), sigma * 4 + 1)
@@ -24,6 +26,11 @@ def gaussianOnPt(conf_map_total, point, sigma):
     conf_map_total[conf_map_total > 1] = 1
 
     return conf_map_total
+
+def pafOnPt(paf_total, point1, point2, sigma):
+    paf_vec = point1 - point2
+    
+
 
 class CocoPoseDataset(Dataset):
 
@@ -46,20 +53,65 @@ class CocoPoseDataset(Dataset):
     def __len__(self):
         return len(self.data)
     
-    def __getitem__(self, idx): 
+    '''
+        Keypoints COCO (augemented w/ neck):
+        0: nose	   		1: neck         2: l eye    3: r eye	4: l ear	  5: r ear
+        6: l shoulder	7: r shoulder	8: l elbow	9: r elbow  10: l wrist	 11: r wrist		
+        12: l hip	   13: r hip       14: l knee  15: r knee   16: l ankle	 17: r ankle
+    '''
+    def __getitem__(self, idx):
         img_path, ann_path = self.data[idx]
         print(img_path)
         img = io.imread(img_path)
         curr_json_f = open(ann_path, 'r')
         anns = json.load(curr_json_f)
         
-        kp_maps = {}
+        intermediate_reprs = []
         for ann in anns:
+            curr_kp_repr = {}
             for i in range(0, len(ann['keypoints']), 3):
-                if i not in kp_maps.keys():
-                    kp_maps[i] = np.zeros((img.shape[0],img.shape[1]))
+                kp = i/3
                 if ann['keypoints'][i+2] != 0:
-                    kp_maps[i] = gaussianOnPt(kp_maps[i], tuple(ann['keypoints'][i:i+2]), 1)
+                    curr_kp_repr[kp] = np.array(ann['keypoints'][i:i+2])
+                else:
+                    curr_kp_repr[kp] = None
+            intermediate_reprs.append(curr_kp_repr)
+
+            for k in sorted(curr_kp_repr.keys(), reverse=True):
+                if i/3 > 0:
+                    curr_kp_repr[i/3+1] = curr_kp_repr[i/3]
+            
+            if curr_kp_repr[6] is not None and curr_kp_repr[7] is not None:
+                curr_kp_repr[1] = (curr_kp_repr[6] + curr_kp_repr[7])/2
+                curr_kp_repr[1] = curr_kp_repr[1].astype(np.int)
+            else:
+                curr_kp_repr[1] = None
+
+        kp_maps = {}
+        for kps in intermediate_reprs:
+            for i in kps.keys():
+                if i not in kp_maps.keys():
+                    kp_maps[i] = np.zeros((img.shape[0], img.shape[1]))
+                if kps[i] is not None:
+                    kp_maps[i] = gaussianOnPt(kp_maps[i], kps[i], 1)
+        
+        paf_maps = {}
+        paf_counts = {}
+        for kps in intermediate_reprs:
+            for limb in limb_set:
+                if limb not in paf_maps.keys():
+                    paf_maps[limb] = np.zeros((img.shape[0], img.shape[1]))
+                    paf_counts = 0
+                f,t = limb
+                pt1 = kps[f]
+                pt2 = kps[t]
+                if pt1 is not None and pt2 is not None:
+                    paf_maps[limb] = pafOnPt(paf_maps[limb], pt1, pt2, 5)
+                    paf_counts[limb] += 1
+
+
+
+
         
         curr_json_f.close()
         return (img, kp_maps)
