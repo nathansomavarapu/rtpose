@@ -27,7 +27,7 @@ def gaussianOnPt(conf_map_total, point, sigma):
 
     return conf_map_total
 
-def pafOnPt(paf_total, point1, point2, sigma):
+def pafOnPt(paf_total, paf_counts, point1, point2, sigma):
     paf_vec = point2 - point1
     paf_tmp = np.zeros(paf_total.shape)
 
@@ -63,6 +63,7 @@ def pafOnPt(paf_total, point1, point2, sigma):
 
         paf_total[:,:,0] += paf_tmp[:,:,0]
         paf_total[:,:,1] += paf_tmp[:,:,1]
+        paf_counts[paf_tmp[:,:,0] > 0] += 1
         
     return paf_total
 
@@ -135,18 +136,22 @@ class CocoPoseDataset(Dataset):
             for limb in limb_set:
                 if limb not in paf_maps.keys():
                     paf_maps[limb] = np.zeros((img.shape[0], img.shape[1], 2))
-                    paf_counts[limb] = 0
+                    paf_counts[limb] = np.zeros((img.shape[0], img.shape[1], 2))
                 f,t = limb
                 pt1 = kps[f]
                 pt2 = kps[t]
                 if pt1 is not None and pt2 is not None:
-                    paf_maps[limb] = pafOnPt(paf_maps[limb], pt1, pt2, 2)
+                    paf_maps[limb] = pafOnPt(paf_maps[limb], paf_counts[limb], pt1, pt2, 2)
                     paf_counts[limb] += 1
         
+        for limb in limb_set:
+            print(paf_counts[limb])
+            paf_maps[limb][paf_counts[limb] != 0] /= paf_counts[limb][paf_counts[limb] != 0]
         curr_json_f.close()
         return (img, kp_maps, paf_maps)
 
-base_path = '/home/shared/workspace/coco_keypoints'
-cocodset = CocoPoseDataset(os.path.join(base_path, 'images'), os.path.join(base_path, 'annotations'))
 
-img, kp, paf = cocodset[1]
+# base_path = '/home/shared/workspace/coco_keypoints'
+# cocodset = CocoPoseDataset(os.path.join(base_path, 'images'), os.path.join(base_path, 'annotations'))
+
+# img, kp, paf = cocodset[1]
