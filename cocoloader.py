@@ -28,9 +28,43 @@ def gaussianOnPt(conf_map_total, point, sigma):
     return conf_map_total
 
 def pafOnPt(paf_total, point1, point2, sigma):
-    paf_vec = point1 - point2
-    
+    paf_vec = point2 - point1
+    paf_tmp = np.zeros(paf_total.shape)
 
+    limb_norm = np.sqrt(np.sum(np.power(paf_vec, 2), axis=0))
+
+    if limb_norm != 0:
+        v = paf_vec/limb_norm
+        v_perp = np.array([v[1], -v[0]])
+
+        x1 = 0
+        x2 = paf_total.shape[1]
+        y1 = 0
+        y2 = paf_total.shape[0]
+        grid_x = np.linspace(x1, x2 - 1, x2 - x1)
+        grid_y = np.linspace(y1, y2 - 1, y2 - y1)
+
+        x_vals, y_vals = np.meshgrid(grid_x, grid_y)
+
+        x_vals = x_vals - point1[0]
+        y_vals = y_vals - point1[1]
+
+        x_vals_1 = x_vals * v[0]
+        y_vals_1 = y_vals * v[1]
+        total_v = x_vals_1 + y_vals_1
+
+        x_vals_2 = x_vals * v_perp[0]
+        y_vals_2 = y_vals * v_perp[1]
+        total_v_perp = np.abs(x_vals_2 + y_vals_2)
+        logical_idx = (total_v >= 0) & (total_v <= limb_norm) & (total_v_perp < sigma)
+
+        paf_tmp[:,:,0][logical_idx] = v[0]
+        paf_tmp[:,:,1][logical_idx] = v[1]
+
+        paf_total[:,:,0] += paf_tmp[:,:,0]
+        paf_total[:,:,1] += paf_tmp[:,:,1]
+        
+    return paf_total
 
 class CocoPoseDataset(Dataset):
 
@@ -100,23 +134,19 @@ class CocoPoseDataset(Dataset):
         for kps in intermediate_reprs:
             for limb in limb_set:
                 if limb not in paf_maps.keys():
-                    paf_maps[limb] = np.zeros((img.shape[0], img.shape[1]))
-                    paf_counts = 0
+                    paf_maps[limb] = np.zeros((img.shape[0], img.shape[1], 2))
+                    paf_counts[limb] = 0
                 f,t = limb
                 pt1 = kps[f]
                 pt2 = kps[t]
                 if pt1 is not None and pt2 is not None:
-                    paf_maps[limb] = pafOnPt(paf_maps[limb], pt1, pt2, 5)
+                    paf_maps[limb] = pafOnPt(paf_maps[limb], pt1, pt2, 2)
                     paf_counts[limb] += 1
-
-
-
-
         
         curr_json_f.close()
-        return (img, kp_maps)
+        return (img, kp_maps, paf_maps)
 
 base_path = '/home/shared/workspace/coco_keypoints'
 cocodset = CocoPoseDataset(os.path.join(base_path, 'images'), os.path.join(base_path, 'annotations'))
 
-print(cocodset[1])
+img, kp, paf = cocodset[1]
