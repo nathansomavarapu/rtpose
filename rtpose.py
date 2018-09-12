@@ -1,13 +1,12 @@
 import torchvision.models as models
 import torch.nn as nn
 import torch
-from cocoloader import CocoPoseDataset
-import os
 
-class rtmpe(nn.Module):
+
+class rtpose_model(nn.Module):
     
-    def __init__(self):
-        super(rtmpe, self).__init__()
+    def __init__(self, freeze_vgg=False):
+        super(rtpose_model, self).__init__()
         vgg19 = models.vgg19(pretrained=True)
         vgg_layers = list(list(vgg19.children())[0][:19])
         vgg_layers.extend([nn.Conv2d(256, 128, 3), nn.ReLU(inplace=True), nn.Conv2d(128, 128, 3), nn.ReLU(inplace=True)])
@@ -24,7 +23,7 @@ class rtmpe(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(512, 128, 1, padding=0),
             nn.ReLU(inplace=True),
-            nn.Conv2d(128, 17, 1, padding=0),
+            nn.Conv2d(128, 18, 1, padding=0),
             nn.ReLU(inplace=True)
         )
 
@@ -37,13 +36,13 @@ class rtmpe(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(512, 128, 1, padding=0),
             nn.ReLU(inplace=True),
-            nn.Conv2d(128, 34, 1, padding=0),
+            nn.Conv2d(128, 36, 1, padding=0),
             nn.ReLU(inplace=True)
         )
 
         for i in range(2,8):
             self.stages['s' + str(i) + '_1'] = nn.Sequential(
-                nn.Conv2d(145, 128, 7, padding=3),
+                nn.Conv2d(146, 128, 7, padding=3),
                 nn.ReLU(inplace=True),
                 nn.Conv2d(128, 128, 7, padding=3),
                 nn.ReLU(inplace=True),
@@ -55,12 +54,12 @@ class rtmpe(nn.Module):
                 nn.ReLU(inplace=True),
                 nn.Conv2d(128, 128, 1, padding=0),
                 nn.ReLU(inplace=True),
-                nn.Conv2d(128, 17, 1, padding=0),
+                nn.Conv2d(128, 18, 1, padding=0),
                 nn.ReLU(inplace=True)
             )
 
             self.stages['s' + str(i) + '_2'] = nn.Sequential(
-                nn.Conv2d(162, 128, 7, padding=3),
+                nn.Conv2d(164, 128, 7, padding=3),
                 nn.ReLU(inplace=True),
                 nn.Conv2d(128, 128, 7, padding=3),
                 nn.ReLU(inplace=True),
@@ -72,11 +71,16 @@ class rtmpe(nn.Module):
                 nn.ReLU(inplace=True),
                 nn.Conv2d(128, 128, 1, padding=0),
                 nn.ReLU(inplace=True),
-                nn.Conv2d(128, 17, 1, padding=0),
+                nn.Conv2d(128, 36, 1, padding=0),
                 nn.ReLU(inplace=True)
             )
         
         self.init_weights()
+
+        if freeze_vgg:
+            for lay in self.head.children():
+                for param in lay.parameters():
+                    param.requires_grad = False
 
 
     def forward(self, x):
@@ -112,16 +116,3 @@ class rtmpe(nn.Module):
                     nn.init.normal_(layer.weight, std=0.01)
                     if layer.bias is not None:
                         nn.init.constant_(layer.bias, 0.0)
-
-        
-
-def main():
-    model = rtmpe()
-
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
-    base_path = '/home/shared/workspace/coco_keypoints'
-    cocodset = CocoPoseDataset(os.path.join(base_path, 'images'), os.path.join(base_path, 'annotations'))
-
-if __name__ == '__main__':
-    main()

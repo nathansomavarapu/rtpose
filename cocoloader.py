@@ -96,10 +96,13 @@ class CocoPoseDataset(Dataset):
     '''
     def __getitem__(self, idx):
         img_path, ann_path = self.data[idx]
-        print(img_path)
         img = io.imread(img_path)
         curr_json_f = open(ann_path, 'r')
         anns = json.load(curr_json_f)
+
+        if 'img' in self.transforms.keys():
+            img = self.transforms['img'](img)
+        
         
         intermediate_reprs = []
         for ann in anns:
@@ -126,7 +129,7 @@ class CocoPoseDataset(Dataset):
         for kps in intermediate_reprs:
             for i in kps.keys():
                 if i not in kp_maps.keys():
-                    kp_maps[i] = np.zeros((img.shape[0], img.shape[1]))
+                    kp_maps[i] = np.zeros((img.size(1), img.size(2)))
                 if kps[i] is not None:
                     kp_maps[i] = gaussianOnPt(kp_maps[i], kps[i], 1)
         
@@ -135,8 +138,8 @@ class CocoPoseDataset(Dataset):
         for kps in intermediate_reprs:
             for limb in limb_set:
                 if limb not in paf_maps.keys():
-                    paf_maps[limb] = np.zeros((img.shape[0], img.shape[1], 2))
-                    paf_counts[limb] = np.zeros((img.shape[0], img.shape[1], 2))
+                    paf_maps[limb] = np.zeros((img.size(1), img.size(2), 2))
+                    paf_counts[limb] = np.zeros((img.size(1), img.size(2), 2))
                 f,t = limb
                 pt1 = kps[f]
                 pt2 = kps[t]
@@ -147,4 +150,21 @@ class CocoPoseDataset(Dataset):
         for limb in limb_set:
             paf_maps[limb][paf_counts[limb] != 0] /= paf_counts[limb][paf_counts[limb] != 0]
         curr_json_f.close()
+
+        cat_kps = [torch.from_numpy(x[1][None,:,:]) for x in sorted(kp_maps.items())]
+        kp_maps = torch.cat(cat_kps, 0)
+
+        cat_pafs = [torch.from_numpy(x[1]).permute(2, 0, 1) for x in sorted(paf_maps.items())]
+        paf_maps = torch.cat(cat_pafs, 0)
+
+        print(kp_maps.size())
+        print(paf_maps.size())
+
+        for key in self.transforms.keys():
+            if key == 'img':
+                img = self.transforms['img'](img)
+            if key == 'kp':
+                kp_maps = self.transforms['kp'](kp_maps)
+            if key == 'paf':
+                paf_maps = self.transforms['paf'](paf_maps)
         return (img, kp_maps, paf_maps)
