@@ -9,7 +9,7 @@ class rtpose_model(nn.Module):
         super(rtpose_model, self).__init__()
         vgg19 = models.vgg19(pretrained=True)
         vgg_layers = list(list(vgg19.children())[0][:19])
-        vgg_layers.extend([nn.Conv2d(256, 128, 3), nn.ReLU(inplace=True), nn.Conv2d(128, 128, 3), nn.ReLU(inplace=True)])
+        vgg_layers.extend([nn.Conv2d(256, 128, 3, padding=1), nn.ReLU(inplace=True), nn.Conv2d(128, 128, 3, padding=1), nn.ReLU(inplace=True)])
         self.head = nn.Sequential(*vgg_layers)
 
         self.stages = {}
@@ -23,7 +23,7 @@ class rtpose_model(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(512, 128, 1, padding=0),
             nn.ReLU(inplace=True),
-            nn.Conv2d(128, 19, 1, padding=0),
+            nn.Conv2d(128, 18, 1, padding=0),
             nn.ReLU(inplace=True)
         )
 
@@ -36,13 +36,13 @@ class rtpose_model(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(512, 128, 1, padding=0),
             nn.ReLU(inplace=True),
-            nn.Conv2d(128, 38, 1, padding=0),
+            nn.Conv2d(128, 34, 1, padding=0),
             nn.ReLU(inplace=True)
         )
 
         for i in range(2,8):
             self.stages['s' + str(i) + '_1'] = nn.Sequential(
-                nn.Conv2d(182, 128, 7, padding=3),
+                nn.Conv2d(180, 128, 7, padding=3),
                 nn.ReLU(inplace=True),
                 nn.Conv2d(128, 128, 7, padding=3),
                 nn.ReLU(inplace=True),
@@ -54,12 +54,12 @@ class rtpose_model(nn.Module):
                 nn.ReLU(inplace=True),
                 nn.Conv2d(128, 128, 1, padding=0),
                 nn.ReLU(inplace=True),
-                nn.Conv2d(128, 19, 1, padding=0),
+                nn.Conv2d(128, 18, 1, padding=0),
                 nn.ReLU(inplace=True)
             )
 
             self.stages['s' + str(i) + '_2'] = nn.Sequential(
-                nn.Conv2d(182, 128, 7, padding=3),
+                nn.Conv2d(180, 128, 7, padding=3),
                 nn.ReLU(inplace=True),
                 nn.Conv2d(128, 128, 7, padding=3),
                 nn.ReLU(inplace=True),
@@ -71,7 +71,7 @@ class rtpose_model(nn.Module):
                 nn.ReLU(inplace=True),
                 nn.Conv2d(128, 128, 1, padding=0),
                 nn.ReLU(inplace=True),
-                nn.Conv2d(128, 38, 1, padding=0),
+                nn.Conv2d(128, 34, 1, padding=0),
                 nn.ReLU(inplace=True)
             )
         
@@ -84,9 +84,7 @@ class rtpose_model(nn.Module):
 
 
     def forward(self, x):
-        print(x.size())
         x0 = self.head(x)
-        print(x0.size())
         inter_signals = []
 
         prev = x0
@@ -99,8 +97,6 @@ class rtpose_model(nn.Module):
             prev = torch.cat([x_new1, x_new2, x0], 1)
             inter_signals.append(x_new1)
             inter_signals.append(x_new2)
-
-            print(prev.size())
         
         return (x_new1, x_new2), inter_signals
     

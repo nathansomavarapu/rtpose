@@ -164,13 +164,15 @@ class CocoPoseDataset:
                 i+= 1
             
             ann_list.append([point_dict, limb_dict])
+        
+        _jf.close()
 
         kp_maps = {}
         limb_maps = {}
         counts = {}
         for ann in ann_list:
             curr_point_dict, curr_limb_dict = ann
-            for i in range(17):
+            for i in range(18):
                 curr_kp = curr_point_dict[i]
                 if i not in kp_maps:
                     kp_maps[i] = np.zeros(self.end_size)
@@ -193,17 +195,18 @@ class CocoPoseDataset:
         key_set = sorted(limb_maps.keys(), key = lambda x: x[0])
         for limb_k in key_set:
             if counts[limb_k] != 0:
-                limb_arr.append(torch.from_numpy(limb_maps[limb_k]/counts[limb_k]).unsqueeze(0))
+                limb_arr.append(torch.from_numpy((limb_maps[limb_k]/counts[limb_k]).transpose(2,0,1)))
             else:
-                limb_arr.append(torch.from_numpy(limb_maps[limb_k]).unsqueeze(0))
+                limb_arr.append(torch.from_numpy(limb_maps[limb_k].transpose(2,0,1)))
 
-        _jf.close()
-        return curr_img, torch.cat(kp_arr, 0), torch.cat(limb_arr, 0)
+        
+        curr_img = torch.from_numpy(curr_img.transpose(2,0,1))
 
-base_path = '/home/shared/workspace/coco_keypoints'
-cocoloader_test = CocoPoseDataset(os.path.join(base_path, 'annotations'), os.path.join(base_path, 'images'))
+        return curr_img.float(), torch.cat(kp_arr, 0).float(), torch.cat(limb_arr, 0).float()
 
-# idx = 24399
-idx = np.random.randint(len(cocoloader_test))
-print(cocoloader_test[idx][1].size())
-print(cocoloader_test[idx][2].size())
+# base_path = '/home/shared/workspace/coco_keypoints'
+# cocoloader_test = CocoPoseDataset(os.path.join(base_path, 'annotations'), os.path.join(base_path, 'images'))
+# # idx = 24399
+# idx = np.random.randint(len(cocoloader_test))
+# print(cocoloader_test[idx][1].size())
+# print(cocoloader_test[idx][2].size())

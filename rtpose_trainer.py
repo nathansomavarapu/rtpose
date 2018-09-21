@@ -14,7 +14,7 @@ def gen_loss(intermediate_signals, kp_gt, paf_gt, device, criterion):
     total_loss = None
     each_loss = []
 
-    for i in range(6):
+    for i in range(len(intermediate_signals)//2):
         kp_i = intermediate_signals[2*i]
         paf_i = intermediate_signals[2*i+1]
 
@@ -27,7 +27,7 @@ def gen_loss(intermediate_signals, kp_gt, paf_gt, device, criterion):
             total_loss += kp_loss_i + paf_loss_i
         each_loss.append((kp_loss_i.item(), paf_loss_i.item()))
     
-    return total_loss
+    return total_loss, each_loss
 
 
 def main():
