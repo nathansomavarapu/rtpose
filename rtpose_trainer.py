@@ -34,7 +34,7 @@ def main():
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     model = rtpose_model(freeze_vgg=False)
-    # model = model.to(device)
+    model = model.cuda()
 
     base_path = '/home/shared/workspace/coco_keypoints'
     cocoset = CocoPoseDataset(os.path.join(base_path, 'annotations'), os.path.join(base_path, 'images'))
@@ -55,9 +55,9 @@ def main():
 
             # TODO: Need to set list of stages to self in the model, so that *.to(device) works
 
-            # img = img.to(device)
-            # kp_gt = kp_gt.to(device)
-            # paf_gt = paf_gt.to(device)
+            img = img.to(device)
+            kp_gt = kp_gt.to(device)
+            paf_gt = paf_gt.to(device)
 
             last_layer, intermediate_signals = model(img)
 
