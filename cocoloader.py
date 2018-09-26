@@ -19,8 +19,8 @@ def put_gaussian(point, gauss_acc, sigma, stride):
     x_grid = x_grid * stride + start
     y_grid = y_grid * stride + start
 
-    dist = (np.power((x_grid - point[0]),2) +  np.power((y_grid - point[1]),2))/(2.0 * np.power(sigma, 2))
-    dist[dist > 4.6052] = 0
+    dist = (np.power((x_grid - point[0]), 2) +  np.power((y_grid - point[1]), 2))/(2.0 * np.power(sigma, 2))
+    dist[dist <= 4.6052] = 0
     dist = np.exp(-dist)
 
     gauss_acc = np.max(np.dstack((gauss_acc, dist)), axis=2)
@@ -189,7 +189,7 @@ class CocoPoseDataset:
                     curr_lm, curr_cnt = put_paf(curr_limb[0], curr_limb[1], limb_maps[limb], self.theta, self.stride)
                     limb_maps[limb] = curr_lm
                     counts[limb] += curr_cnt
-
+        
         kp_arr = [torch.FloatTensor(x).unsqueeze(0) for _,x in sorted(kp_maps.items(), key=lambda x: x[0])]
         limb_arr = []
         key_set = sorted(limb_maps.keys(), key = lambda x: x[0])
@@ -203,10 +203,3 @@ class CocoPoseDataset:
         curr_img = torch.from_numpy(curr_img.transpose(2,0,1))
 
         return curr_img.float(), torch.cat(kp_arr, 0).float(), torch.cat(limb_arr, 0).float()
-
-# base_path = '/home/shared/workspace/coco_keypoints'
-# cocoloader_test = CocoPoseDataset(os.path.join(base_path, 'annotations'), os.path.join(base_path, 'images'))
-# # idx = 24399
-# idx = np.random.randint(len(cocoloader_test))
-# print(cocoloader_test[idx][1].size())
-# print(cocoloader_test[idx][2].size())

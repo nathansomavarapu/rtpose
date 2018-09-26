@@ -7,6 +7,7 @@ from rtpose import rtpose_model
 import torch.nn as nn
 import torch.optim as optim
 
+import torchvision
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 
@@ -51,9 +52,11 @@ def main():
 
     for e in range(epochs):
         for i, data in enumerate(cocoloader):
+
+            print(len(data))
             img, kp_gt, paf_gt = data
 
-            # TODO: Need to set list of stages to self in the model, so that *.to(device) works
+            print(img.shape, kp_gt.shape, paf_gt.shape)
 
             img = img.to(device)
             kp_gt = kp_gt.to(device)
@@ -69,6 +72,12 @@ def main():
 
             if i % 100 == 0:
                 print('Epoch [%d/%d], Batch [%d/%d], Total Loss %f' % (e, epochs, i, len(cocoset), curr_loss.item()))
+
+                write_tensor0 = last_layer[0][0].unsqueeze(0).permute(1,0,2,3)
+                write_tensor1 = kp_gt[0].unsqueeze(0).permute(1,0,2,3)
+
+                torchvision.utils.save_image(write_tensor0, 'sample_pred.png', nrow=3)
+                torchvision.utils.save_image(write_tensor1, 'sample_gt.png', nrow=3)
 
 if __name__ == '__main__':
     main()
