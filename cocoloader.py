@@ -66,6 +66,9 @@ def put_paf(point1, point2, paf_acc, theta, stride):
 
     tmp_map = np.zeros(paf_acc.shape)
     tmp_map[miny:maxy+1, minx:maxx+1] = paf_curr
+    
+    if len(((paf_acc + tmp_map), num_p)) > 2:
+        print((paf_acc + tmp_map), num_p)
 
     return (paf_acc + tmp_map), num_p
 
@@ -124,6 +127,12 @@ class CocoPoseDataset:
         curr_img = np.pad(curr_img, ((y_pad, y_pad), (x_pad, x_pad), (0,0)), mode='constant', constant_values=0)
 
         curr_img = cv2.resize(curr_img, self.img_size)
+
+        curr_img = cv2.cvtColor(curr_img, cv2.COLOR_BGR2RGB)
+        curr_img = curr_img.astype(np.float32)
+        curr_img = curr_img/255.0
+
+        # TODO: Mean center images
 
         scale_x = curr_img.shape[1]/x_orig
         scale_y = curr_img.shape[0]/y_orig
