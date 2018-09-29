@@ -31,7 +31,7 @@ def put_gaussian(point, gauss_acc, sigma, stride):
 
 class CocoPoseDataset:
 
-    def __init__(self, ann_dir, img_dir, size=(368, 368), end_size=(46,46), theta=1.0, sigma=7, stride=8):
+    def __init__(self, ann_dir, img_dir, size=(368, 368), end_size=(46,46), theta=1.0, sigma=6, stride=8):
 
         print('Loading Datasets...')
 
@@ -124,7 +124,7 @@ class CocoPoseDataset:
 
         kp_maps = {}
         for ann in ann_list:
-            curr_point_dict, curr_limb_dict = ann
+            curr_point_dict = ann
             for i in range(18):
                 curr_kp = curr_point_dict[i]
                 if i not in kp_maps:
