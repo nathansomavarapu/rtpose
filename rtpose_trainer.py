@@ -24,7 +24,7 @@ def main():
     cocoset = CocoPoseDataset(os.path.join(base_path, 'annotations'), os.path.join(base_path, 'images'))
     cocoloader = DataLoader(cocoset, batch_size=4, shuffle=True, num_workers=4)
 
-    epochs = 5
+    epochs = 15
 
     criterion = nn.MSELoss()
     criterion = criterion.to(device)
@@ -32,48 +32,33 @@ def main():
     train_params = filter(lambda x: x.requires_grad, model.parameters())
     opt = optim.SGD(train_params, lr=1)
 
-    test_ind = np.random.randint(len(cocoset))
-    print(test_ind)
-    img, kp_gt = cocoset[np.random.randint(len(cocoset))]
-    torchvision.utils.save_image(img, 'img_orig.png')
-    write_tensor1 = torch.max(kp_gt, 0)[0]
-    img = F.upsample(img.unsqueeze(0), size=(46,46), mode='bilinear')
-    img = img[0]
-    img[0] = torch.where(write_tensor1 > 0, img[0] * write_tensor1, torch.zeros(46,46))
-    img[1] = torch.where(write_tensor1 > 0, img[1] * write_tensor1, torch.zeros(46,46))
-    img[2] = torch.where(write_tensor1 > 0, img[2] * write_tensor1, torch.zeros(46,46))
+    for e in range(epochs):
+        for i, data in enumerate(cocoloader):
+            img, kp_gt = data
 
-    torchvision.utils.save_image(write_tensor1, 'sample_gt.png', nrow=3)
-    torchvision.utils.save_image(img, 'img.png')
+            img = img.to(device)
+            kp_gt = kp_gt.to(device)
 
-    # for e in range(epochs):
-    #     for i, data in enumerate(cocoloader):
+            last_layer, intermediate_signals = model(img)
 
-    #         print(len(data))
-    #         img, kp_gt = data
+            opt.zero_grad()
+            curr_loss = 0
+            for signal in intermediate_signals:
+                curr_loss += criterion(signal, kp_gt)
+            curr_loss.backward()
 
-    #         img = img.to(device)
-    #         kp_gt = kp_gt.to(device)
+            opt.step()
 
-    #         last_layer, intermediate_signals = model(img)
+            if i % 100 == 0:
+                print('Epoch [%d/%d], Batch [%d/%d], Total Loss %f' % (e, epochs, i, len(cocoset), curr_loss.item()))
 
-    #         opt.zero_grad()
-    #         curr_loss = 0
-    #         for signal in intermediate_signals:
-    #             curr_loss += criterion(signal, kp_gt)
-    #         curr_loss.backward()
+                write_tensor0 = torch.max(last_layer[0], 0)[0].unsqueeze(0)
+                write_tensor1 = torch.max(kp_gt[0], 0)[0].unsqueeze(0)
 
-    #         opt.step()
-
-    #         if i % 100 == 0:
-    #             print('Epoch [%d/%d], Batch [%d/%d], Total Loss %f' % (e, epochs, i, len(cocoset), curr_loss.item()))
-
-    #             write_tensor0 = last_layer[0][0].unsqueeze(0).permute(1,0,2,3)
-    #             write_tensor1 = kp_gt[0].unsqueeze(0).permute(1,0,2,3)
-
-    #             torchvision.utils.save_image(write_tensor0, 'sample_pred.png', nrow=3)
-    #             torchvision.utils.save_image(write_tensor1, 'sample_gt.png', nrow=3)
-    #             torchvision.utils.save_image(img[0], 'img.png')
+                img = F.interpolate(img, size=(46,46), mode='bilinear')
+                torchvision.utils.save_image(write_tensor0, 'sample_pred.png', nrow=1)
+                torchvision.utils.save_image(write_tensor1, 'sample_gt.png', nrow=1)
+                torchvision.utils.save_image(img[0], 'img.png')
 
 if __name__ == '__main__':
     main()

@@ -31,7 +31,7 @@ class rtpose_model(nn.Module):
         for i in range(2,8):
             
             curr_l1 = nn.Sequential(
-                nn.Conv2d(180, 128, 7, padding=3),
+                nn.Conv2d(146, 128, 7, padding=3),
                 nn.ReLU(inplace=True),
                 nn.Conv2d(128, 128, 7, padding=3),
                 nn.ReLU(inplace=True),

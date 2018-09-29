@@ -28,7 +28,6 @@ def put_gaussian(point, gauss_acc, sigma, stride):
     
     return gauss_acc
 
-
 class CocoPoseDataset:
 
     def __init__(self, ann_dir, img_dir, size=(368, 368), end_size=(46,46), theta=1.0, sigma=6, stride=8):
@@ -93,9 +92,6 @@ class CocoPoseDataset:
 
         scale_x = curr_img.shape[1]/x_orig
         scale_y = curr_img.shape[0]/y_orig
-
-        # print(x_orig, curr_img.shape[1], y_orig, curr_img.shape[0])
-        # print(scale_x, scale_y)
         
         ann_list = []
         for ann_idx in range(len(curr_ann)):
