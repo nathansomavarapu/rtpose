@@ -99,6 +99,7 @@ class CocoPoseDataset:
 
             point_dict = {}
             limb_dict = {}
+            # TODO: ADD KP OFFSET, ANNOTATIONS ARE INCORRECT WITH PADDING
             for i in range(0, len(kpts), 3):
                 kp = kpts[i:i+3]
                 kp_idx = i if i == 0 else (i//3)+1
