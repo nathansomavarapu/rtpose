@@ -28,50 +28,6 @@ def put_gaussian(point, gauss_acc, sigma, stride):
     
     return gauss_acc
 
-def put_paf(point1, point2, paf_acc, theta, stride):
-    point1 = np.array(point1[:2], dtype=np.float) / stride
-    point2 = np.array(point2[:2], dtype=np.float) / stride
-
-    vec = point2 - point1
-    vec_norm = np.linalg.norm(vec)
-    
-    if vec_norm == 0:
-        return paf_acc
-
-    vec_unit = vec/vec_norm
-    vec_perp_unit = np.array([vec[1], -vec[0]])/vec_norm
-    
-    minx = max(int(round(min(point1[0], point2[0]) - theta)), 0)
-    maxx = min(int(round(max(point1[0], point2[0]) + theta)), paf_acc.shape[1] - 1)
-    miny = max(int(round(min(point1[1], point2[1]) - theta)), 0)
-    maxy = min(int(round(min(point1[1], point2[1]) + theta)), paf_acc.shape[0] - 1)
-
-    x_grid, y_grid = np.meshgrid(np.linspace(minx, maxx, maxx-minx+1), np.linspace(miny, maxy, maxy-miny+1))
-
-    x_grid -= point1[0]
-    y_grid -= point1[1]
-
-    p_test = x_grid * vec_perp_unit[0] + y_grid * vec_perp_unit[1]
-    p_test[p_test > theta] = 0
-
-    new_vec_map_0 = np.zeros((p_test.shape[0], p_test.shape[1]))
-    new_vec_map_1 = np.zeros((p_test.shape[0], p_test.shape[1]))
-
-    new_vec_map_0[p_test != 0] = 1
-    new_vec_map_1[p_test != 0] = 1
-
-    num_p = len(p_test != 0)
-
-    paf_curr = np.dstack((new_vec_map_0 * vec_unit[0], new_vec_map_1 * vec_unit[1]))
-
-    tmp_map = np.zeros(paf_acc.shape)
-    tmp_map[miny:maxy+1, minx:maxx+1] = paf_curr
-    
-    if len(((paf_acc + tmp_map), num_p)) > 2:
-        print((paf_acc + tmp_map), num_p)
-
-    return (paf_acc + tmp_map), num_p
-
 
 class CocoPoseDataset:
 
@@ -114,6 +70,7 @@ class CocoPoseDataset:
         _jf = open(self.ann_pths[index], 'r')
         curr_ann = json.load(_jf)
         curr_img = np.array(cv2.imread(self.img_pths[index]), dtype=np.float32)
+        _jf.close()
 
         max_side = max(curr_img.shape[:2])
 
@@ -163,22 +120,9 @@ class CocoPoseDataset:
             else:
                 point_dict[1] = []
             
-            i = 1 
-            for limb in limb_set:
-                j1, j2 = limb
-                if len(point_dict[j1]) != 0 and len(point_dict[j2]) != 0:
-                    limb_dict[limb] = [point_dict[j1], point_dict[j2]]
-                else:
-                    limb_dict[limb] = []
-                i+= 1
-            
-            ann_list.append([point_dict, limb_dict])
-        
-        _jf.close()
+            ann_list.append(point_dict)
 
         kp_maps = {}
-        limb_maps = {}
-        counts = {}
         for ann in ann_list:
             curr_point_dict, curr_limb_dict = ann
             for i in range(18):
@@ -187,28 +131,8 @@ class CocoPoseDataset:
                     kp_maps[i] = np.zeros(self.end_size)
                 if len(curr_kp) != 0:
                     kp_maps[i] = put_gaussian(curr_kp, kp_maps[i], self.sigma, self.stride)
-            
-            for limb in curr_limb_dict.keys():
-                curr_limb = curr_limb_dict[limb]
-            
-                if limb not in limb_maps.keys():
-                    limb_maps[limb] = np.zeros((self.end_size[0], self.end_size[1], 2))
-                    counts[limb] = 0
-                if len(curr_limb) != 0:
-                    curr_lm, curr_cnt = put_paf(curr_limb[0], curr_limb[1], limb_maps[limb], self.theta, self.stride)
-                    limb_maps[limb] = curr_lm
-                    counts[limb] += curr_cnt
         
         kp_arr = [torch.FloatTensor(x).unsqueeze(0) for _,x in sorted(kp_maps.items(), key=lambda x: x[0])]
-        limb_arr = []
-        key_set = sorted(limb_maps.keys(), key = lambda x: x[0])
-        for limb_k in key_set:
-            if counts[limb_k] != 0:
-                limb_arr.append(torch.from_numpy((limb_maps[limb_k]/counts[limb_k]).transpose(2,0,1)))
-            else:
-                limb_arr.append(torch.from_numpy(limb_maps[limb_k].transpose(2,0,1)))
-
-        
         curr_img = torch.from_numpy(curr_img.transpose(2,0,1))
 
-        return curr_img.float(), torch.cat(kp_arr, 0).float(), torch.cat(limb_arr, 0).float()
+        return curr_img.float(), torch.cat(kp_arr, 0).float()
