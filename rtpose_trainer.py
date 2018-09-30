@@ -39,9 +39,9 @@ def main():
             img = img.to(device)
             kp_gt = kp_gt.to(device)
 
-            last_layer, intermediate_signals = model(img)
-
             opt.zero_grad()
+            last_layer, intermediate_signals = model(img)
+            
             curr_loss = 0
             for signal in intermediate_signals:
                 curr_loss += criterion(signal, kp_gt)
@@ -59,6 +59,8 @@ def main():
                 torchvision.utils.save_image(write_tensor0, 'sample_pred.png', nrow=1)
                 torchvision.utils.save_image(write_tensor1, 'sample_gt.png', nrow=1)
                 torchvision.utils.save_image(img[0], 'img.png')
+        
+        torch.save(model.state_dict(), 'rtpose.pt')
 
 if __name__ == '__main__':
     main()

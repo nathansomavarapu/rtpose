@@ -76,11 +76,11 @@ class CocoPoseDataset:
         y_pad = int((max_side - curr_img.shape[0])/2)
         x_pad = int((max_side - curr_img.shape[1])/2)
 
-        x_orig = curr_img.shape[1]
-        y_orig = curr_img.shape[0]
-
         # pad image to sqaure
         curr_img = np.pad(curr_img, ((y_pad, y_pad), (x_pad, x_pad), (0,0)), mode='constant', constant_values=0)
+
+        x_orig = curr_img.shape[1]
+        y_orig = curr_img.shape[0]
 
         curr_img = cv2.resize(curr_img, self.img_size)
 
@@ -98,16 +98,14 @@ class CocoPoseDataset:
             kpts = curr_ann[ann_idx]['keypoints']
 
             point_dict = {}
-            limb_dict = {}
-            # TODO: ADD KP OFFSET, ANNOTATIONS ARE INCORRECT WITH PADDING
             for i in range(0, len(kpts), 3):
                 kp = kpts[i:i+3]
                 kp_idx = i if i == 0 else (i//3)+1
                 if kp[2] > 0:
-                    point_dict[kp_idx] = [kp[0] * scale_x, kp[1] * scale_y, kp[2]]
+                    point_dict[kp_idx] = [round((kp[0] + x_pad) * scale_x), round((kp[1] + y_pad) * scale_y), kp[2]]
                 else:
                     point_dict[kp_idx] = []
-            
+                        
             ls = point_dict[6]
             rs = point_dict[7]
 
