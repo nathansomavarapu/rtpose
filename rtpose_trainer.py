@@ -20,6 +20,8 @@ def main():
     model = rtpose_model(freeze_vgg=False)
     model = model.to(device)
 
+    model.load_state_dict(torch.load('rtpose.pt'))
+
     base_path = '/home/shared/workspace/coco_keypoints'
     cocoset = CocoPoseDataset(os.path.join(base_path, 'annotations'), os.path.join(base_path, 'images'))
     cocoloader = DataLoader(cocoset, batch_size=4, shuffle=True, num_workers=4)
