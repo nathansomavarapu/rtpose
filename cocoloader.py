@@ -42,6 +42,7 @@ def put_paf(point1, point2, paf_acc, theta, stride):
     
     tmp_paf_0 = np.zeros(paf_acc.shape[0], paf_acc.shape[1])
     tmp_paf_1 = np.zeros(paf_acc.shape[0], paf_acc.shape[1])
+    count_map = np.zeros(paf_acc.shape[0], paf_acc.shape[1])
 
     x_grid, y_grid = np.meshgrid(np.arange(paf_acc.shape[0]), np.arange(paf_acc.shape[1]))
 
@@ -49,6 +50,10 @@ def put_paf(point1, point2, paf_acc, theta, stride):
     dist_1 = np.abs(v_perp[0] * (x_grid - point1[0]) + v_perp[1] * (y_grid - point1[1]))
 
     tmp_paf_0[(dist_0 >= 0) & (dist_0 <= v_norm) & (dist_1 <= theta)] = v_unit[0]
+    tmp_paf_1[(dist_0 >= 0) & (dist_0 <= v_norm) & (dist_1 <= theta)] = v_unit[1]
+    count_map[(dist_0 >= 0) & (dist_0 <= v_norm) & (dist_1 <= theta)] = 0
+
+    return np.dstack([tmp_paf_0, tmp_paf_1]), count_map
 
     
 
