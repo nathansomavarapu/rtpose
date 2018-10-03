@@ -34,17 +34,17 @@ def put_paf(point1, point2, paf_acc, theta, stride):
     point1 = np.array([point1[0]/float(stride), point1[1]/float(stride)])
     point2 = np.array([point2[0]/float(stride), point2[1]/float(stride)])
 
-    v = point2 - point1
-    v_norm = np.linalg.norm(v)
-    v_unit = v/v_norm
-    v_perp = np.array([v_unit[1], -v_unit[0]])
-
-    if v_norm == 0:
-        return paf_acc
-    
     tmp_paf_0 = np.zeros((paf_acc.shape[0], paf_acc.shape[1]))
     tmp_paf_1 = np.zeros((paf_acc.shape[0], paf_acc.shape[1]))
     count_map = np.zeros((paf_acc.shape[0], paf_acc.shape[1]))
+
+    v = point2 - point1
+    v_norm = np.linalg.norm(v)
+    if v_norm == 0:
+        return paf_acc, count_map
+
+    v_unit = v/v_norm
+    v_perp = np.array([v_unit[1], -v_unit[0]])
 
     x_grid, y_grid = np.meshgrid(np.arange(paf_acc.shape[0]), np.arange(paf_acc.shape[1]))
 
@@ -55,9 +55,7 @@ def put_paf(point1, point2, paf_acc, theta, stride):
     tmp_paf_1[(dist_0 >= 0) & (dist_0 <= v_norm) & (dist_1 <= theta)] = v_unit[1]
     count_map[(dist_0 >= 0) & (dist_0 <= v_norm) & (dist_1 <= theta)] = 0
 
-    return np.dstack([tmp_paf_0, tmp_paf_1]), count_map
-
-    
+    return paf_acc + np.dstack([tmp_paf_0, tmp_paf_1]), count_map
 
 
 class CocoPoseDataset:
@@ -192,19 +190,19 @@ class CocoPoseDataset:
 
         curr_img = torch.from_numpy(curr_img.transpose(2,0,1))
 
+        # print(torch.cat(kp_arr, 0).float().size(), torch.cat(paf_arr, 0).float().size())
+
         return curr_img.float(), torch.cat(kp_arr, 0).float(), torch.cat(paf_arr, 0).float()
 
+# base_path = '/home/shared/workspace/coco_keypoints'
+# cocoset = CocoPoseDataset(os.path.join(base_path, 'annotations'), os.path.join(base_path, 'images'))
+# rand_ind = np.random.randint(len(cocoset))
+# print(rand_ind)
 
+# img, kp_gt, paf_gt = cocoset[rand_ind]
 
-base_path = '/home/shared/workspace/coco_keypoints'
-cocoset = CocoPoseDataset(os.path.join(base_path, 'annotations'), os.path.join(base_path, 'images'))
-rand_ind = np.random.randint(len(cocoset))
-print(rand_ind)
+# img = F.interpolate(img.unsqueeze(0), size=(46,46), mode='bilinear')
 
-img, kp_gt, paf_gt = cocoset[rand_ind]
-
-img = F.interpolate(img.unsqueeze(0), size=(46,46), mode='bilinear')
-
-utils.save_image(torch.max(kp_gt, 0)[0], 'kp_gt.png', nrow=1)
-utils.save_image(torch.max(paf_gt, 0)[0], 'paf_gt.png')
-utils.save_image(img[0], 'img.png')
+# utils.save_image(torch.max(kp_gt, 0)[0], 'kp_gt.png', nrow=1)
+# utils.save_image(torch.max(paf_gt, 0)[0], 'paf_gt.png')
+# utils.save_image(img[0], 'img.png')
