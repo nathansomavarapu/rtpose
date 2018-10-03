@@ -7,6 +7,8 @@ import glob
 import os
 import json
 
+import torch.nn.functional as F
+
 img_ext = '.jpg'
 ann_ext = '.json'
 limb_set = [(0,1), (0,2), (0,3), (2,4), (3,5), (1,6), (1,7), (6,8), (7,9), (8,10), (9,11), (1,12), (1,13), (12,14), (13,15), (14,16), (15,17)]
@@ -40,9 +42,9 @@ def put_paf(point1, point2, paf_acc, theta, stride):
     if v_norm == 0:
         return paf_acc
     
-    tmp_paf_0 = np.zeros(paf_acc.shape[0], paf_acc.shape[1])
-    tmp_paf_1 = np.zeros(paf_acc.shape[0], paf_acc.shape[1])
-    count_map = np.zeros(paf_acc.shape[0], paf_acc.shape[1])
+    tmp_paf_0 = np.zeros((paf_acc.shape[0], paf_acc.shape[1]))
+    tmp_paf_1 = np.zeros((paf_acc.shape[0], paf_acc.shape[1]))
+    count_map = np.zeros((paf_acc.shape[0], paf_acc.shape[1]))
 
     x_grid, y_grid = np.meshgrid(np.arange(paf_acc.shape[0]), np.arange(paf_acc.shape[1]))
 
@@ -168,23 +170,25 @@ class CocoPoseDataset:
                     kp_maps[i] = put_gaussian(curr_kp, kp_maps[i], self.sigma, self.stride)
             
             for limb in limb_set:
-                point1, point2 = tuple(curr_limb_dict[limb])
+                points = curr_limb_dict[limb]
                 if limb not in paf_maps:
-                    paf_maps[limb] = np.zeros(self.end_size[0], self.end_size[1], 2)
-                    paf_counts[limb] = np.zeros(self.end_size[0], self.end_size[1], 2)
-                if len(point1) != 0 and len(point2) != 0:
-                    updated_pafs, new_counts = put_paf(point1, point2, paf_maps[limb], self.theta, self.stride)
-                    paf_maps[limb] = updated_pafs
-                    paf_counts[limb] += new_counts
+                        paf_maps[limb] = np.zeros((self.end_size[0], self.end_size[1], 2))
+                        paf_counts[limb] = np.zeros((self.end_size[0], self.end_size[1]))
+                if len(points) != 0:
+                    point1, point2 = tuple(curr_limb_dict[limb])
+                    if len(point1) != 0 and len(point2) != 0:
+                        updated_pafs, new_counts = put_paf(point1, point2, paf_maps[limb], self.theta, self.stride)
+                        paf_maps[limb] = updated_pafs
+                        paf_counts[limb] += new_counts
                     
         
         kp_arr = [torch.FloatTensor(x).unsqueeze(0) for _,x in sorted(kp_maps.items(), key=lambda x: x[0])]
 
         paf_arr = []
-        limbs_sorted = sorted(paf_dict.keys(), key=lambda x: x[0])
+        limbs_sorted = sorted(paf_maps.keys(), key=lambda x: x[0])
         for limb in limbs_sorted:
-            cur_map = paf_maps[limb]/paf_counts[paf_counts] if len(paf_counts[paf_counts != 0]) != 0 else paf_maps[limb]
-            paf_arr.append(torch.FloatTensor(curr_map).transpose(2,0,1)) 
+            curr_map = paf_maps[limb]/paf_counts[limb] if len(paf_counts[limb][paf_counts[limb] != 0]) != 0 else paf_maps[limb]
+            paf_arr.append(torch.FloatTensor(curr_map.transpose(2,0,1))) 
 
         curr_img = torch.from_numpy(curr_img.transpose(2,0,1))
 
@@ -198,3 +202,9 @@ rand_ind = np.random.randint(len(cocoset))
 print(rand_ind)
 
 img, kp_gt, paf_gt = cocoset[rand_ind]
+
+img = F.interpolate(img.unsqueeze(0), size=(46,46), mode='bilinear')
+
+utils.save_image(torch.max(kp_gt, 0)[0], 'kp_gt.png', nrow=1)
+utils.save_image(torch.max(paf_gt, 0)[0], 'paf_gt.png')
+utils.save_image(img[0], 'img.png')
