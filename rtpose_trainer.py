@@ -16,7 +16,7 @@ import torch.nn.functional as F
 import os
 
 def main():
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 
     model = rtpose_model(freeze_vgg=False)
     model = model.to(device)
@@ -28,15 +28,15 @@ def main():
 
     base_path = '/home/shared/workspace/coco_keypoints'
     cocoset = CocoPoseDataset(os.path.join(base_path, 'annotations'), os.path.join(base_path, 'images'))
-    cocoloader = DataLoader(cocoset, batch_size=4, shuffle=True, num_workers=4)
+    cocoloader = DataLoader(cocoset, batch_size=16, shuffle=True, num_workers=4)
 
-    epochs = 15
+    epochs = 20
 
     criterion = nn.MSELoss()
     criterion = criterion.to(device)
 
     train_params = filter(lambda x: x.requires_grad, model.parameters())
-    opt = optim.SGD(train_params, lr=1)
+    opt = optim.SGD(train_params, lr=0.6)
 
     for e in range(epochs):
         for i, data in enumerate(cocoloader):
@@ -58,12 +58,12 @@ def main():
             opt.step()
 
             if i % 100 == 0:
-                print('Epoch [%d/%d], Batch [%d/%d], Total Loss %f' % (e, epochs, i, len(cocoset), curr_loss.item()))
+                print('Epoch [%d/%d], Batch [%d/%d], Total Loss %f' % (e, epochs, i, len(cocoloader), curr_loss.item()))
 
                 write_tensor0 = torch.max(last_layer[0][0], 0)[0].unsqueeze(0)
                 write_tensor1 = torch.max(kp_gt[0], 0)[0].unsqueeze(0)
 
-                write_tensor2 = torch.max(last_layer[0][1], 0)[0].unsqueeze(0)
+                write_tensor2 = torch.max(last_layer[1][0], 0)[0].unsqueeze(0)
                 write_tensor3 = torch.max(paf_gt[0], 0)[0].unsqueeze(0)
 
                 img = F.interpolate(img, size=(46,46), mode='bilinear')

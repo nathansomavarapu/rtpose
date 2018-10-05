@@ -190,7 +190,6 @@ class CocoPoseDataset:
 
         curr_img = torch.from_numpy(curr_img.transpose(2,0,1))
 
-        # print(torch.cat(kp_arr, 0).float().size(), torch.cat(paf_arr, 0).float().size())
 
         return curr_img.float(), torch.cat(kp_arr, 0).float(), torch.cat(paf_arr, 0).float()
 
