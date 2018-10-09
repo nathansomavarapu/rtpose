@@ -193,15 +193,15 @@ class CocoPoseDataset:
 
         return curr_img.float(), torch.cat(kp_arr, 0).float(), torch.cat(paf_arr, 0).float()
 
-# base_path = '/home/shared/workspace/coco_keypoints'
-# cocoset = CocoPoseDataset(os.path.join(base_path, 'annotations'), os.path.join(base_path, 'images'))
-# rand_ind = np.random.randint(len(cocoset))
-# print(rand_ind)
+base_path = '/home/shared/workspace/coco_keypoints'
+cocoset = CocoPoseDataset(os.path.join(base_path, 'annotations'), os.path.join(base_path, 'images'))
+rand_ind = np.random.randint(len(cocoset))
+print(rand_ind)
 
-# img, kp_gt, paf_gt = cocoset[rand_ind]
+img, kp_gt, paf_gt = cocoset[rand_ind]
 
-# img = F.interpolate(img.unsqueeze(0), size=(46,46), mode='bilinear')
+img = F.interpolate(img.unsqueeze(0), size=(46,46), mode='bilinear')
 
-# utils.save_image(torch.max(kp_gt, 0)[0], 'kp_gt.png', nrow=1)
-# utils.save_image(torch.max(paf_gt, 0)[0], 'paf_gt.png')
-# utils.save_image(img[0], 'img.png')
+utils.save_image(torch.max(kp_gt, 0)[0], 'kp_gt.png', nrow=1)
+utils.save_image(torch.max(torch.abs(paf_gt), 0)[0], 'paf_gt.png')
+utils.save_image(img[0], 'img.png')
