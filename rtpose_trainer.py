@@ -30,7 +30,7 @@ def main():
     cocoset = CocoPoseDataset(os.path.join(base_path, 'annotations'), os.path.join(base_path, 'images'))
     cocoloader = DataLoader(cocoset, batch_size=16, shuffle=True, num_workers=4)
 
-    epochs = 20
+    epochs = 100
 
     criterion = nn.MSELoss()
     criterion = criterion.to(device)
