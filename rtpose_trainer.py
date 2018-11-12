@@ -26,9 +26,9 @@ def main():
     if os.path.exists('rtpose.pt'):
         model.load_state_dict(torch.load('rtpose.pt'))
 
-    base_path = '/home/shared/workspace/coco_keypoints'
-    cocoset = CocoPoseDataset(os.path.join(base_path, 'annotations'), os.path.join(base_path, 'images'))
-    cocoloader = DataLoader(cocoset, batch_size=16, shuffle=True, num_workers=4)
+    base_path = '../data'
+    cocoset = CocoPoseDataset(os.path.join(base_path, 'annotations/person_keypoints_train2017.json'), os.path.join(base_path, 'train2017'))
+    cocoloader = DataLoader(cocoset, batch_size=16, shuffle=True, num_workers=0)
 
     epochs = 100
 

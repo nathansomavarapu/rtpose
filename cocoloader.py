@@ -90,7 +90,6 @@ class CocoPoseDataset:
         curr_ann = self.coco.loadAnns(ann_ids)
         img_f = os.path.join(self.img_path, self.coco.loadImgs(curr_img_id)[0]['file_name'])
 
-        print(curr_ann)
         curr_img = np.array(cv2.imread(img_f), dtype=np.float32)
 
         max_side = max(curr_img.shape[:2])
@@ -184,24 +183,24 @@ class CocoPoseDataset:
 
         else:
             kp_arr = [torch.FloatTensor(np.zeros(self.end_size)).unsqueeze(0) for _ in range(18)]
-            paf_arr = [torch.FloatTensor(np.zeros((self.end_size[0], self.end_size[1], 2)).transpose(2,0,1)).unsqueeze(0) for _ in range(len(limb_set))]
+            paf_arr = [torch.FloatTensor(np.zeros((self.end_size[0], self.end_size[1], 2)).transpose(2,0,1)) for _ in range(len(limb_set))]
 
         curr_img = torch.from_numpy(curr_img.transpose(2,0,1))
 
-
+        # print(curr_img.size(), torch.cat(kp_arr, 0).float().size(), torch.cat(paf_arr, 0).float().size())
         return curr_img.float(), torch.cat(kp_arr, 0).float(), torch.cat(paf_arr, 0).float()
 
-base_path = '../data/'
-cocoset = CocoPoseDataset(os.path.join(base_path, 'annotations', 'person_keypoints_train2017.json'), os.path.join(base_path, 'train2017'))
-rand_ind = np.random.randint(len(cocoset))
-print(rand_ind)
+# base_path = '../data/'
+# cocoset = CocoPoseDataset(os.path.join(base_path, 'annotations', 'person_keypoints_train2017.json'), os.path.join(base_path, 'train2017'))
+# rand_ind = np.random.randint(len(cocoset))
+# print(rand_ind)
 
-img, kp_gt, paf_gt = cocoset[rand_ind]
+# img, kp_gt, paf_gt = cocoset[rand_ind]
 
-print(img.size(), kp_gt.size(), paf_gt.size())
+# print(img.size(), kp_gt.size(), paf_gt.size())
 
-img = F.interpolate(img.unsqueeze(0), size=(46,46), mode='bilinear')
+# img = F.interpolate(img.unsqueeze(0), size=(46,46), mode='bilinear')
 
-utils.save_image(torch.max(kp_gt, 0)[0], 'kp_gt.png')
-utils.save_image(torch.max(torch.abs(paf_gt), 0)[0], 'paf_gt.png')
-utils.save_image(img[0], 'img.png')
+# utils.save_image(torch.max(kp_gt, 0)[0], 'kp_gt.png')
+# utils.save_image(torch.max(torch.abs(paf_gt), 0)[0], 'paf_gt.png')
+# utils.save_image(img[0], 'img.png')
