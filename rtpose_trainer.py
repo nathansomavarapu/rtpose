@@ -28,7 +28,7 @@ def main():
 
     base_path = '../data'
     cocoset = CocoPoseDataset(os.path.join(base_path, 'annotations/person_keypoints_train2017.json'), os.path.join(base_path, 'train2017'))
-    cocoloader = DataLoader(cocoset, batch_size=16, shuffle=True, num_workers=0)
+    cocoloader = DataLoader(cocoset, batch_size=16, shuffle=True, num_workers=4)
 
     epochs = 100
 
@@ -36,7 +36,7 @@ def main():
     criterion = criterion.to(device)
 
     train_params = filter(lambda x: x.requires_grad, model.parameters())
-    opt = optim.SGD(train_params, lr=0.6)
+    opt = optim.SGD(train_params, lr=1, momentum=0.9)
 
     for e in range(epochs):
         for i, data in enumerate(cocoloader):
@@ -46,13 +46,14 @@ def main():
             kp_gt = kp_gt.to(device)
             paf_gt = paf_gt.to(device)
 
-            opt.zero_grad()
             last_layer, intermediate_signals = model(img)
             
             curr_loss = 0
             for (signal_kp, signal_paf) in intermediate_signals:
                 curr_loss += criterion(signal_kp, kp_gt)
                 curr_loss += criterion(signal_paf, paf_gt)
+
+            opt.zero_grad()
             curr_loss.backward()
 
             opt.step()
