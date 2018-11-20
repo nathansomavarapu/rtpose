@@ -71,6 +71,7 @@ def main():
                 torchvision.utils.save_image(write_tensor0, 'kp_pred.png', nrow=1)
                 torchvision.utils.save_image(write_tensor1, 'kp_gt.png', nrow=1)
 
+                # TODO: Potentially torch abs for viz
                 torchvision.utils.save_image(write_tensor2, 'paf_pred.png', nrow=1)
                 torchvision.utils.save_image(write_tensor3, 'paf_gt.png', nrow=1)
                 torchvision.utils.save_image(img[0], 'img.png')

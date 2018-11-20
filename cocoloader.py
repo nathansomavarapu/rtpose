@@ -56,6 +56,7 @@ def put_paf(point1, point2, paf_acc, theta, stride):
 
     tmp_paf_0[(dist_0 >= 0) & (dist_0 <= v_norm) & (dist_1 <= theta)] = v_unit[0]
     tmp_paf_1[(dist_0 >= 0) & (dist_0 <= v_norm) & (dist_1 <= theta)] = v_unit[1]
+    # TODO: This count is likely wrong.
     count_map[(dist_0 >= 0) & (dist_0 <= v_norm) & (dist_1 <= theta)] = 0
 
     return paf_acc + np.dstack([tmp_paf_0, tmp_paf_1]), count_map
@@ -170,8 +171,7 @@ class CocoPoseDataset:
                         if len(point1) != 0 and len(point2) != 0:
                             updated_pafs, new_counts = put_paf(point1, point2, paf_maps[limb], self.theta, self.stride)
                             paf_maps[limb] = updated_pafs
-                            paf_counts[limb] += new_counts
-                        
+                            paf_counts[limb] += new_counts           
             
             kp_arr = [torch.FloatTensor(x).unsqueeze(0) for _,x in sorted(kp_maps.items(), key=lambda x: x[0])]
 
