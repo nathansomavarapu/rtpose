@@ -28,9 +28,9 @@ def main():
 
     base_path = '../data'
     cocoset = CocoPoseDataset(os.path.join(base_path, 'annotations/person_keypoints_train2017.json'), os.path.join(base_path, 'train2017'))
-    cocoloader = DataLoader(cocoset, batch_size=16, shuffle=True, num_workers=4)
+    cocoloader = DataLoader(cocoset, batch_size=32, shuffle=True, num_workers=4)
 
-    epochs = 100
+    epochs = 200
 
     criterion = nn.MSELoss()
     criterion = criterion.to(device)
@@ -64,14 +64,13 @@ def main():
                 write_tensor0 = torch.max(last_layer[0][0], 0)[0].unsqueeze(0)
                 write_tensor1 = torch.max(kp_gt[0], 0)[0].unsqueeze(0)
 
-                write_tensor2 = torch.max(last_layer[1][0], 0)[0].unsqueeze(0)
-                write_tensor3 = torch.max(paf_gt[0], 0)[0].unsqueeze(0)
+                write_tensor2 = torch.max(torch.abs(last_layer[1][0]), 0)[0].unsqueeze(0)
+                write_tensor3 = torch.max(torch.abs(paf_gt[0]), 0)[0].unsqueeze(0)
 
                 img = F.interpolate(img, size=(46,46), mode='bilinear')
                 torchvision.utils.save_image(write_tensor0, 'kp_pred.png', nrow=1)
                 torchvision.utils.save_image(write_tensor1, 'kp_gt.png', nrow=1)
 
-                # TODO: Potentially torch abs for viz
                 torchvision.utils.save_image(write_tensor2, 'paf_pred.png', nrow=1)
                 torchvision.utils.save_image(write_tensor3, 'paf_gt.png', nrow=1)
                 torchvision.utils.save_image(img[0], 'img.png')

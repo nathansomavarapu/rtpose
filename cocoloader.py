@@ -195,11 +195,14 @@ class CocoPoseDataset:
 # rand_ind = np.random.randint(len(cocoset))
 # print(rand_ind)
 
-# img, kp_gt, paf_gt = cocoset[rand_ind]
+# img, kp_gt, paf_gt = cocoset[12890]
 
 # print(img.size(), kp_gt.size(), paf_gt.size())
 
 # img = F.interpolate(img.unsqueeze(0), size=(46,46), mode='bilinear')
+
+# print(torch.max(kp_gt, 0)[0].size())
+# print(torch.max(kp_gt, 0)[0].type())
 
 # utils.save_image(torch.max(kp_gt, 0)[0], 'kp_gt.png')
 # utils.save_image(torch.max(torch.abs(paf_gt), 0)[0], 'paf_gt.png')

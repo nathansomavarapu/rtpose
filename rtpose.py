@@ -42,7 +42,7 @@ class rtpose_model(nn.Module):
         )
         self.stages['s1_2'] = getattr(self, 's1_2')
 
-        for i in range(2,8):
+        for i in range(2,7):
             
             curr_s1_1 = nn.Sequential(
                 nn.Conv2d(180, 128, 7, padding=3),
@@ -97,7 +97,7 @@ class rtpose_model(nn.Module):
         prev = x0
         x_new1 = None
         x_new2 = None
-        for i in range(1,8):
+        for i in range(1,7):
             x_new1 = getattr(self, 's' + str(i) + '_1')(prev)
             x_new2 = getattr(self, 's' + str(i) + '_2')(prev)
 
