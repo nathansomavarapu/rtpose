@@ -24,7 +24,7 @@ class rtpose_model(nn.Module):
             nn.Conv2d(512, 128, 1, padding=0),
             nn.ReLU(inplace=True),
             nn.Conv2d(128, 18, 1, padding=0),
-            nn.ReLU(inplace=True)
+            #nn.ReLU(inplace=True)
         )
         self.stages['s1_1'] = getattr(self, 's1_1')
 
@@ -38,7 +38,7 @@ class rtpose_model(nn.Module):
             nn.Conv2d(512, 128, 1, padding=0),
             nn.ReLU(inplace=True),
             nn.Conv2d(128, 34, 1, padding=0),
-            nn.ReLU(inplace=True)
+            #nn.ReLU(inplace=True)
         )
         self.stages['s1_2'] = getattr(self, 's1_2')
 
@@ -58,7 +58,7 @@ class rtpose_model(nn.Module):
                 nn.Conv2d(128, 128, 1, padding=0),
                 nn.ReLU(inplace=True),
                 nn.Conv2d(128, 18, 1, padding=0),
-                nn.ReLU(inplace=True)
+                #nn.ReLU(inplace=True)
             )
             setattr(self, 's' + str(i) + '_1', curr_s1_1)
             self.stages['s' + str(i) + '_1'] = getattr(self, 's' + str(i) + '_1')
@@ -77,7 +77,7 @@ class rtpose_model(nn.Module):
                 nn.Conv2d(128, 128, 1, padding=0),
                 nn.ReLU(inplace=True),
                 nn.Conv2d(128, 34, 1, padding=0),
-                nn.ReLU(inplace=True)
+                #nn.ReLU(inplace=True)
             )
             setattr(self, 's' + str(i) + '_2', curr_s1_2)
             self.stages['s' + str(i) + '_2'] = getattr(self, 's' + str(i) + '_2')
