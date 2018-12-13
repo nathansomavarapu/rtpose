@@ -80,7 +80,7 @@ class CocoPoseDataset:
 
     '''
         Keypoints COCO (augemented w/ neck):
-        0:nose	   		1: neck         2: l eye        3: r eye	 4: l ear	  5: r ear        
+        0:nose	   	1: neck         2: l eye        3: r eye	 4: l ear	  5: r ear        
         6: l shoulder	7: r shoulder	8: l elbow	    9: r elbow  10: l wrist  11: r wrist
         12: l hip	   13: r hip       14: l knee      15: r knee   16: l ankle	 17: r ankle
     '''

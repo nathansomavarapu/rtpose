@@ -30,7 +30,10 @@ model.eval()
 
 with torch.no_grad():
     # curr_img = cv2.imread('samples/test1.jpeg')
-    curr_img = cv2.imread('samples/test2.jpeg')
+    # curr_img = cv2.imread('samples/test2.jpeg')
+    # curr_img = cv2.imread('samples/test3.jpeg')
+    curr_img = cv2.imread('samples/test4.jpeg')
+    # curr_img = cv2.imread('samples/test5.jpeg')
 
     max_side = max(curr_img.shape[:2])
 
@@ -65,19 +68,24 @@ with torch.no_grad():
 
     centers = []
 
+    # cv2.imwrite('orig.png', curr_img_np)
     for i, kp in enumerate(kps):
-        kp[kp < 0.5] = 0
+        kp[kp < 0.3] = 0
         lab_img, num_labs = ndimage.label(kp)
         # _, _, _, curr_centers = ndimage.measurements.extrema(kp, lab_img, list(range(1, num_labs + 1)))
         curr_centers = ndimage.measurements.center_of_mass(kp, lab_img, list(range(1, num_labs + 1)))
+
+        # if i == 0:
+        #     print(curr_centers)
         # print(curr_centers)
         centers.append([( int(round(center[1] * scale_x)), int(round(center[0] * scale_y)) ) for center in curr_centers])
 
         for c in centers[-1]:
-            cv2.circle(curr_img_np, c, 3, colors[i], -1)
-
-        # cv2.imwrite('kp_' + str(i) + '.png', kp * 255)
+            cv2.circle(curr_img_np, c, 2, colors[i], -1)
+        # if i == 0:
+        #     cv2.imwrite('kp_' + str(i) + '.png', kp * 255)
     
     cv2.imwrite('kp_draw.png', curr_img_np)
+    
 
     # print(centers)
