@@ -82,8 +82,8 @@ with torch.no_grad():
 
         for c in centers[-1]:
             cv2.circle(curr_img_np, c, 2, colors[i], -1)
-        # if i == 0:
-        #     cv2.imwrite('kp_' + str(i) + '.png', kp * 255)
+        if i == 7:
+            cv2.imwrite('kp_' + str(i) + '.png', kp * 255)
     
     cv2.imwrite('kp_draw.png', curr_img_np)
     

@@ -56,7 +56,6 @@ def put_paf(point1, point2, paf_acc, theta, stride):
 
     tmp_paf_0[(dist_0 >= 0) & (dist_0 <= v_norm) & (dist_1 <= theta)] = v_unit[0]
     tmp_paf_1[(dist_0 >= 0) & (dist_0 <= v_norm) & (dist_1 <= theta)] = v_unit[1]
-    # TODO: This count is likely wrong.
     count_map[(dist_0 >= 0) & (dist_0 <= v_norm) & (dist_1 <= theta)] = 0
 
     return paf_acc + np.dstack([tmp_paf_0, tmp_paf_1]), count_map
