@@ -25,10 +25,10 @@ def put_gaussian(point, gauss_acc, sigma, stride):
     y_grid = y_grid * stride + start
 
     dist = (np.power((x_grid - point[0]), 2) +  np.power((y_grid - point[1]), 2))/(2.0 * np.power(sigma, 2))
-    dist[dist <= 4.6052] = 0
-    dist = np.exp(-dist)
+    dist_temp = np.exp(-dist)
+    dist_temp[dist >= 4.6052] = 0
 
-    gauss_acc = np.max(np.dstack((gauss_acc, dist)), axis=2)
+    gauss_acc = np.max(np.dstack((gauss_acc, dist_temp)), axis=2)
     gauss_acc[gauss_acc > 1] = 1
     
     return gauss_acc
@@ -63,7 +63,7 @@ def put_paf(point1, point2, paf_acc, theta, stride):
 
 class CocoPoseDataset:
 
-    def __init__(self, ann_dir, img_dir, size=(368, 368), end_size=(46,46), theta=1.0, sigma=3, stride=8):
+    def __init__(self, ann_dir, img_dir, size=(368, 368), end_size=(46,46), theta=1.0, sigma=7.0, stride=8):
         self.coco=COCO(ann_dir)
         self.imgs = self.coco.getImgIds()
         self.img_path = img_dir

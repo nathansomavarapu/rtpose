@@ -30,7 +30,7 @@ def main():
 
     base_path = '../data'
     cocoset = CocoPoseDataset(os.path.join(base_path, 'annotations2017/person_keypoints_train2017.json'), os.path.join(base_path, 'train2017'))
-    cocoloader = DataLoader(cocoset, batch_size=8, shuffle=True, num_workers=4)
+    cocoloader = DataLoader(cocoset, batch_size=15, shuffle=True, num_workers=4)
 
     epochs = 200
 
@@ -38,8 +38,8 @@ def main():
     criterion = criterion.to(device)
 
     train_params = filter(lambda x: x.requires_grad, model.parameters())
-    opt = optim.SGD(train_params, lr=0.00002, momentum=0.9, weight_decay=0.0005)
-    sched = optim.lr_scheduler.StepLR(opt, step_size=136106, gamma=0.333)
+    opt = optim.SGD(train_params, lr=0.00004, momentum=0.9, weight_decay=0.0005)
+    sched = optim.lr_scheduler.StepLR(opt, step_size=400000, gamma=0.333)
 
     for e in range(epochs):
         for i, data in enumerate(cocoloader):
@@ -56,8 +56,7 @@ def main():
                 curr_loss += criterion(signal_kp, kp_gt)
                 curr_loss += criterion(signal_paf, paf_gt)
 
-            curr_loss += criterion(last_layer[0], kp_gt)
-            curr_loss += criterion(last_layer[1], paf_gt)
+                # print(curr_loss)
 
             opt.zero_grad()
             curr_loss.backward()
