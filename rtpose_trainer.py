@@ -18,10 +18,10 @@ import os
 def main():
     device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
 
-    model = rtpose_model(freeze_vgg=False)
+    model = rtpose_model(freeze_vgg=True, reinit_vgg=False)
     model = model.to(device)
 
-    model.train()
+    # model.train()
 
     # print(model)
 
@@ -30,16 +30,17 @@ def main():
 
     base_path = '../data'
     cocoset = CocoPoseDataset(os.path.join(base_path, 'annotations2017/person_keypoints_train2017.json'), os.path.join(base_path, 'train2017'))
-    cocoloader = DataLoader(cocoset, batch_size=15, shuffle=True, num_workers=4)
+    cocoloader = DataLoader(cocoset, batch_size=32, shuffle=True, num_workers=4)
 
     epochs = 200
 
-    criterion = nn.MSELoss(reduction='sum')
+    # criterion = nn.MSELoss(reduction='sum')
+    criterion = nn.MSELoss()
     criterion = criterion.to(device)
 
     train_params = filter(lambda x: x.requires_grad, model.parameters())
-    opt = optim.SGD(train_params, lr=0.00004, momentum=0.9, weight_decay=0.0005)
-    sched = optim.lr_scheduler.StepLR(opt, step_size=400000, gamma=0.333)
+    opt = optim.SGD(train_params, lr=1.0, momentum=0.9)
+    # sched = optim.lr_scheduler.StepLR(opt, step_size=400000, gamma=0.1)
 
     for e in range(epochs):
         for i, data in enumerate(cocoloader):
@@ -61,7 +62,7 @@ def main():
             opt.zero_grad()
             curr_loss.backward()
 
-            sched.step()
+            # sched.step()
             opt.step()
             
 
@@ -74,6 +75,8 @@ def main():
                 write_tensor2 = torch.max(torch.abs(last_layer[1][0]), 0)[0].unsqueeze(0)
                 write_tensor3 = torch.max(torch.abs(paf_gt[0]), 0)[0].unsqueeze(0)
 
+                torchvision.utils.save_image(img[0], 'orig_img.png')
+                
                 img = F.interpolate(img, size=(46,46), mode='bilinear')
                 torchvision.utils.save_image(write_tensor0, 'kp_pred.png', nrow=1)
                 torchvision.utils.save_image(write_tensor1, 'kp_gt.png', nrow=1)
