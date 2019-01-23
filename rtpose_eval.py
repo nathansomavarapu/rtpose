@@ -135,7 +135,7 @@ def return_prediction(img, viz=False):
 
         for i, peaks in enumerate(all_peaks):
             for pt in peaks:
-                orig_img = cv2.circle(orig_img, pt[:2], 4, colors[i], thickness=-1)
+                orig_img = cv2.circle(orig_img, pt[:2], 3, colors[i], thickness=-1)
 
         cv2.imwrite('viz_kp.png', orig_img)
         
