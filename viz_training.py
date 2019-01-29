@@ -39,10 +39,10 @@ class VisdomTrainer():
         self.viz.line(X=x_axis, Y=kp_data, win=self.win_kp_loss, update='append')
         self.viz.line(X=x_axis, Y=paf_data, win=self.win_paf_loss, update='append')
 
-        self.win_kp_pred_img = self.viz.image(kp_pred_img, win=self.win_kp_pred_img, opts={'title':'Keypoints Predicted Image'})
-        self.win_kp_gt_img = self.viz.image(kp_gt_img, win=self.win_kp_gt_img, opts={'title':'Keypoints GT Image'})
-        self.win_paf_pred_img = self.viz.image(paf_pred_img, win=self.win_paf_pred_img, opts={'title':'PAF Predicted Image'})
-        self.win_paf_gt_img = self.viz.image(paf_gt_img, win=self.win_paf_gt_img, opts={'title':'PAF GT Image'})
-        self.win_orig = self.viz.image(img, win=self.win_orig, opts={'title':'Original Image'})
+        self.viz.image(kp_pred_img, win=self.win_kp_pred_img, opts={'title':'Keypoints Predicted Image'})
+        self.viz.image(kp_gt_img, win=self.win_kp_gt_img, opts={'title':'Keypoints GT Image'})
+        self.viz.image(paf_pred_img, win=self.win_paf_pred_img, opts={'title':'PAF Predicted Image'})
+        self.viz.image(paf_gt_img, win=self.win_paf_gt_img, opts={'title':'PAF GT Image'})
+        self.viz.image(img, win=self.win_orig, opts={'title':'Original Image'})
 
         self.viz_counter += 1
