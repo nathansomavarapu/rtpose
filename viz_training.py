@@ -26,7 +26,6 @@ class VisdomTrainer():
         kp_data = np.array([kp_loss_val])
         paf_data = np.array([paf_loss_val])
 
-
         if self.init :
             self.win_kp_loss = self.viz.line(X=x_axis, Y=kp_data, opts={'linecolor': np.array([[0, 0, 255],]), 'title': 'Keypoints Loss'})
             self.win_paf_loss = self.viz.line(X=x_axis, Y=paf_data, opts={'linecolor': np.array([[255, 165, 0],]), 'title': 'PAF Loss'})
@@ -35,6 +34,8 @@ class VisdomTrainer():
             self.win_paf_pred_img = self.viz.image(paf_pred_img, opts={'title':'PAF Predicted Image'})
             self.win_paf_gt_img = self.viz.image(paf_gt_img, opts={'title':'PAF GT Image'})
             self.win_orig = self.viz.image(img, opts={'title':'Original Image'})
+
+            self.init = False
 
         self.viz.line(X=x_axis, Y=kp_data, win=self.win_kp_loss, update='append')
         self.viz.line(X=x_axis, Y=paf_data, win=self.win_paf_loss, update='append')
