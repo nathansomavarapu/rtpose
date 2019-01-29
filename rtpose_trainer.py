@@ -2,6 +2,7 @@ from cocoloader import CocoPoseDataset
 import os
 
 import torch
+from torch.autograd import Variable
 from rtpose import rtpose_model
 import torch.nn as nn
 import torch.optim as optim
@@ -38,7 +39,7 @@ def main():
     criterion = criterion.to(device)
 
     train_params = filter(lambda x: x.requires_grad, model.parameters())
-    opt = optim.SGD(train_params, lr=1.0, momentum=0.9)
+    opt = optim.Adam(train_params, lr=0.9)
 
     viz = None
     if enable_viz:
@@ -55,37 +56,33 @@ def main():
 
             last_layer, intermediate_signals = model(img)
             
-            curr_loss = 0
+            
+            kp_loss = 0
+            paf_loss = 0
             for (signal_kp, signal_paf) in intermediate_signals:
-                curr_loss += criterion(signal_kp, kp_gt)
-                curr_loss += criterion(signal_paf, paf_gt)
+                kp_loss += criterion(signal_kp, kp_gt)
+                paf_loss += criterion(signal_paf, paf_gt)
+            
+            curr_loss = kp_loss + paf_loss
 
             opt.zero_grad()
             curr_loss.backward()
-
             opt.step()
             
 
-            if i % 100 == 0:
-                print('Epoch [%d/%d], Batch [%d/%d], Total Loss %f' % (e, epochs, i, len(cocoloader), curr_loss.item()))
+            if i % 100 == 0 and viz is not None:
 
-                write_tensor0 = torch.max(last_layer[0][0], 0)[0].unsqueeze(0)
-                write_tensor1 = torch.max(kp_gt[0], 0)[0].unsqueeze(0)
+                img = img[0].data.cpu().numpy()
 
-                write_tensor2 = torch.max(torch.abs(last_layer[1][0]), 0)[0].unsqueeze(0)
-                write_tensor3 = torch.max(torch.abs(paf_gt[0]), 0)[0].unsqueeze(0)
+                write_tensor0 = torch.max(last_layer[0][0].data, 0)[0].unsqueeze(0).cpu().numpy()
+                write_tensor1 = torch.max(kp_gt[0].data, 0)[0].unsqueeze(0).cpu().numpy()
 
-                torchvision.utils.save_image(img[0], 'orig_img.png')
-                
-                img = F.interpolate(img, size=(46,46), mode='bilinear')
-                torchvision.utils.save_image(write_tensor0, 'kp_pred.png', nrow=1)
-                torchvision.utils.save_image(write_tensor1, 'kp_gt.png', nrow=1)
+                write_tensor2 = torch.max(torch.abs(last_layer[1][0].data), 0)[0].unsqueeze(0).cpu().numpy()
+                write_tensor3 = torch.max(torch.abs(paf_gt[0].data), 0)[0].unsqueeze(0).cpu().numpy()
 
-                torchvision.utils.save_image(write_tensor2, 'paf_pred.png', nrow=1)
-                torchvision.utils.save_image(write_tensor3, 'paf_gt.png', nrow=1)
-                torchvision.utils.save_image(img[0], 'img.png')
-        
-        torch.save(model.state_dict(), 'rtpose.pt')
+                viz.update_viz(kp_loss.item(), paf_loss.item(), img, write_tensor0, write_tensor1, write_tensor2, write_tensor3)
+
+    torch.save(model.state_dict(), 'rtpose.pt')
 
 if __name__ == '__main__':
     main()

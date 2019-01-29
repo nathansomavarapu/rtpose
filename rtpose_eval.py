@@ -57,6 +57,7 @@ def return_prediction(img, viz=False, path=True):
         img = img.to(device)
 
         last_layer, _ = model(img)
+
         kps, pafs = last_layer
         kps = kps[0].data.cpu().numpy()
         pafs = pafs[0].data.cpu().numpy()
@@ -66,13 +67,21 @@ def return_prediction(img, viz=False, path=True):
         inv_scale_x = xo/img.size(2)
         inv_scale_y = yo/img.size(3)
 
+        peaks_adj = []
+        for i in range(18):
+            peaks_adj.append([])
+
         for i, peaks in enumerate(peaks):
             for pt in peaks:
                 x = int((pt[0] * inv_scale_x) - xp)
                 y = int((pt[1] * inv_scale_y) - yp)
                 orig_img = cv2.circle(orig_img, (x,y), 3, colors[i], thickness=-1)
-        
+
+                peaks_adj[i].append((x, y, pt[2], pt[3]))
+                
         cv2.imwrite('viz_img.png', orig_img)
+
+    return peaks_adj
 
 
 if __name__ == "__main__":

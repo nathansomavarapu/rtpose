@@ -7,7 +7,8 @@ from visdom import Visdom
 class VisdomTrainer():
     def __init__(self, port, hostname):
         self.viz = Visdom(port=port, server=hostname)
-        self.win_loss = None
+        self.win_kp_loss = None
+        self.win_paf_loss = None
 
         self.win_match = None
         self.win_ann = None
@@ -16,20 +17,19 @@ class VisdomTrainer():
         self.text_window_pred = None
         self.viz_counter = 0
 
+        self.init = True
 
-    def update_viz(self, cl_loss_val, loc_loss_val, img, default_boxes, match_idxs, ann_cl, ann_boxes, predicted_classes, predicted_offsets):
+
+    def update_viz(self, kp_loss_val, paf_loss_val, img, kp_pred_img, kp_gt_img, paf_pred_img, paf_pred_img):
 
         x_axis = np.array([self.viz_counter])
-        cl_data = np.array([cl_loss_val])
+        kp_data = np.array([kp_loss_val])
+        paf_data = np.array([paf_loss_val])
 
-        match_img = self.get_match_img(img, default_boxes, match_idxs, ann_boxes)
-        pred_img = self.get_pred_img(img, default_boxes, predicted_offsets, non_zero_pred_idxs)
 
-        true_cl_str = 'True Classes: ' + str(ann_classes)
-        pred_cl_str = 'Predicted Classes: ' + str(pred_classes)
-
-        if self.win_loss is None or self.win_match is None:
-            self.win_loss = self.viz.line(X=x_axis, Y=cl_data, opts={'linecolor': np.array([[0, 0, 255],]), 'title': 'Classification Loss'})
+        if self.init :
+            self.win_kp_loss = self.viz.line(X=x_axis, Y=kp_data, opts={'linecolor': np.array([[0, 0, 255],]), 'title': 'Keypoints Loss'})
+            self.win_loc = self.viz.line(X=x_axis, Y=paf_data, opts={'linecolor': np.array([[255, 165, 0],]), 'title': 'PAF Loss'})
             self.win_match = self.viz.image(match_img, opts={'title':'Match Image'})
             self.win_pred = self.viz.image(pred_img, opts={'title':'Predictions Image'})
             self.text_window_tr = self.viz.text(true_cl_str)
