@@ -1,5 +1,7 @@
 import torch
 import cv2
+import imgaug as ia
+from imgaug import augmenters as iaa
 import numpy as np 
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
@@ -9,7 +11,6 @@ import json
 
 import torch.nn.functional as F
 from pycocotools.coco import COCO
-
 
 
 img_ext = '.jpg'
@@ -60,7 +61,6 @@ def put_paf(point1, point2, paf_acc, theta, stride):
 
     return paf_acc + np.dstack([tmp_paf_0, tmp_paf_1]), count_map
 
-
 class CocoPoseDataset:
 
     def __init__(self, ann_dir, img_dir, size=(368, 368), end_size=(46,46), theta=1.0, sigma=7.0, stride=8):
@@ -73,6 +73,17 @@ class CocoPoseDataset:
         self.sigma = sigma
         self.theta = theta
         self.stride = stride
+
+        ia.seed(np.random.randint(1000))
+
+        self.augmenter = iaa.Sequential([
+            iaa.Fliplr(0.5),
+            iaa.Affine(
+                scale={"x": (0.8, 1.2), "y": (0.8, 1.2)},
+                translate_percent={"x": (-0.2, 0.2), "y": (-0.2, 0.2)},
+                rotate=(-180, 180)
+            )
+        ])
     
     def __len__(self):
         return len(self.imgs)
@@ -90,7 +101,7 @@ class CocoPoseDataset:
         curr_ann = self.coco.loadAnns(ann_ids)
         img_f = os.path.join(self.img_path, self.coco.loadImgs(curr_img_id)[0]['file_name'])
 
-        curr_img = np.array(cv2.imread(img_f), dtype=np.float32)
+        curr_img = np.array(cv2.imread(img_f), dtype=np.uint8)
 
         max_side = max(curr_img.shape[:2])
 
@@ -105,17 +116,21 @@ class CocoPoseDataset:
 
         curr_img = cv2.resize(curr_img, self.img_size)
 
+        aug_det = self.augmenter.to_deterministic()
+        curr_img = aug_det.augment_image(curr_img)
+
         curr_img = cv2.cvtColor(curr_img, cv2.COLOR_BGR2RGB)
         curr_img = curr_img.astype(np.float32)
         curr_img = curr_img/255.0
 
         # TODO: Mean center images
 
-        scale_x = curr_img.shape[1]/x_orig
-        scale_y = curr_img.shape[0]/y_orig
+        curr_h, curr_w = curr_img.shape[:2]
+
+        scale_x = curr_w/x_orig
+        scale_y = curr_h/y_orig
 
         if len(curr_ann) != 0:
-        
             ann_list = []
             for ann_idx in range(len(curr_ann)):
                 kpts = curr_ann[ann_idx]['keypoints']
@@ -170,31 +185,34 @@ class CocoPoseDataset:
                         if len(point1) != 0 and len(point2) != 0:
                             updated_pafs, new_counts = put_paf(point1, point2, paf_maps[limb], self.theta, self.stride)
                             paf_maps[limb] = updated_pafs
-                            paf_counts[limb] += new_counts           
-            
-            kp_arr = [torch.FloatTensor(x).unsqueeze(0) for _,x in sorted(kp_maps.items(), key=lambda x: x[0])]
-
+                            paf_counts[limb] += new_counts
             paf_arr = []
             limbs_sorted = sorted(paf_maps.keys(), key=lambda x: x[0])
             for limb in limbs_sorted:
                 curr_map = paf_maps[limb]/paf_counts[limb] if len(paf_counts[limb][paf_counts[limb] != 0]) != 0 else paf_maps[limb]
-                paf_arr.append(torch.FloatTensor(curr_map.transpose(2,0,1)))
+                curr_map = curr_map.transpose(2,0,1)
+                cm1 = aug_det.augment_image(curr_map[0])
+                cm2 = aug_det.augment_image(curr_map[1])
 
+                paf_arr.append(np.stack([cm1, cm2]))
+
+            kp_arr_np = np.stack([aug_det.augment_image(x) for _, x in sorted(kp_maps.items(), key=lambda x: x[0])], axis=0)
+            paf_arr_np = np.concatenate(paf_arr)
         else:
-            kp_arr = [torch.FloatTensor(np.zeros(self.end_size)).unsqueeze(0) for _ in range(18)]
-            paf_arr = [torch.FloatTensor(np.zeros((self.end_size[0], self.end_size[1], 2)).transpose(2,0,1)) for _ in range(len(limb_set))]
+            kp_arr_np = np.zeros((18, 46, 46))
+            paf_arr_np = np.zeros((34, 46, 46))
 
         curr_img = torch.from_numpy(curr_img.transpose(2,0,1))
 
-        # print(curr_img.size(), torch.cat(kp_arr, 0).float().size(), torch.cat(paf_arr, 0).float().size())
-        return curr_img.float(), torch.cat(kp_arr, 0).float(), torch.cat(paf_arr, 0).float()
+        return curr_img.float(), torch.FloatTensor(kp_arr_np), torch.FloatTensor(paf_arr_np)
 
 # base_path = '../data/'
-# cocoset = CocoPoseDataset(os.path.join(base_path, 'annotations', 'person_keypoints_train2017.json'), os.path.join(base_path, 'train2017'))
-# rand_ind = np.random.randint(len(cocoset))
-# print(rand_ind)
+# cocoset = CocoPoseDataset(os.path.join(base_path, 'annotations2017', 'person_keypoints_train2017.json'), os.path.join(base_path, 'train2017'))
+# # rand_ind = np.random.randint(len(cocoset))
+# # print(rand_ind)
 
-# img, kp_gt, paf_gt = cocoset[12890]
+# img, kp_gt, paf_gt = cocoset[97297]
+# img, kp_gt, paf_gt = cocoset[97297]
 
 # print(img.size(), kp_gt.size(), paf_gt.size())
 

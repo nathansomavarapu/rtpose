@@ -2,7 +2,6 @@ from cocoloader import CocoPoseDataset
 import os
 
 import torch
-from torch.optim.lr_scheduler import ReduceLROnPlateau
 from rtpose import rtpose_model
 import torch.nn as nn
 import torch.optim as optim
@@ -13,17 +12,18 @@ import torchvision.transforms as transforms
 import numpy as np
 import torch.nn.functional as F
 
+from viz_training import VisdomTrainer
+
 import os
 
 def main():
     device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+    enable_viz = True
+    port = 8908
+    hostname = 'http://localhost'
 
     model = rtpose_model(freeze_vgg=True, reinit_vgg=False)
     model = model.to(device)
-
-    # model.train()
-
-    # print(model)
 
     if os.path.exists('rtpose.pt'):
         model.load_state_dict(torch.load('rtpose.pt'))
@@ -34,13 +34,16 @@ def main():
 
     epochs = 200
 
-    # criterion = nn.MSELoss(reduction='sum')
     criterion = nn.MSELoss()
     criterion = criterion.to(device)
 
     train_params = filter(lambda x: x.requires_grad, model.parameters())
     opt = optim.SGD(train_params, lr=1.0, momentum=0.9)
-    # sched = optim.lr_scheduler.StepLR(opt, step_size=400000, gamma=0.1)
+
+    viz = None
+    if enable_viz:
+        viz = VisdomTrainer(port, hostname)
+
 
     for e in range(epochs):
         for i, data in enumerate(cocoloader):
@@ -57,12 +60,9 @@ def main():
                 curr_loss += criterion(signal_kp, kp_gt)
                 curr_loss += criterion(signal_paf, paf_gt)
 
-                # print(curr_loss)
-
             opt.zero_grad()
             curr_loss.backward()
 
-            # sched.step()
             opt.step()
             
 
