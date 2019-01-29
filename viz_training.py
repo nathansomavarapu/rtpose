@@ -10,17 +10,17 @@ class VisdomTrainer():
         self.win_kp_loss = None
         self.win_paf_loss = None
 
-        self.win_match = None
-        self.win_ann = None
-        self.win_pred = None
-        self.text_window_tr = None
-        self.text_window_pred = None
+        self.win_kp_pred_img = None
+        self.win_kp_gt_img = None
+        self.win_paf_pred_img = None
+        self.win_paf_gt_img = None
+        self.win_orig = None
         self.viz_counter = 0
 
         self.init = True
 
 
-    def update_viz(self, kp_loss_val, paf_loss_val, img, kp_pred_img, kp_gt_img, paf_pred_img, paf_pred_img):
+    def update_viz(self, kp_loss_val, paf_loss_val, img, kp_pred_img, kp_gt_img, paf_pred_img, paf_gt_img):
 
         x_axis = np.array([self.viz_counter])
         kp_data = np.array([kp_loss_val])
@@ -29,18 +29,20 @@ class VisdomTrainer():
 
         if self.init :
             self.win_kp_loss = self.viz.line(X=x_axis, Y=kp_data, opts={'linecolor': np.array([[0, 0, 255],]), 'title': 'Keypoints Loss'})
-            self.win_loc = self.viz.line(X=x_axis, Y=paf_data, opts={'linecolor': np.array([[255, 165, 0],]), 'title': 'PAF Loss'})
-            self.win_match = self.viz.image(match_img, opts={'title':'Match Image'})
-            self.win_pred = self.viz.image(pred_img, opts={'title':'Predictions Image'})
-            self.text_window_tr = self.viz.text(true_cl_str)
-            self.text_window_pred = self.viz.text(pred_cl_str)
+            self.win_paf_loss = self.viz.line(X=x_axis, Y=paf_data, opts={'linecolor': np.array([[255, 165, 0],]), 'title': 'PAF Loss'})
+            self.win_kp_pred_img = self.viz.image(kp_pred_img, opts={'title':'Keypoints Predicted Image'})
+            self.win_kp_gt_img = self.viz.image(kp_gt_img, opts={'title':'Keypoints GT Image'})
+            self.win_paf_pred_img = self.viz.image(paf_pred_img, opts={'title':'PAF Predicted Image'})
+            self.win_paf_gt_img = self.viz.image(paf_gt_img, opts={'title':'PAF GT Image'})
+            self.win_orig = self.viz.image(img, opts={'title':'Original Image'})
 
-        self.viz.line(X=x_axis, Y=cl_data, win=self.win_loss, update='append')
+        self.viz.line(X=x_axis, Y=kp_data, win=self.win_kp_loss, update='append')
+        self.viz.line(X=x_axis, Y=paf_data, win=self.win_paf_loss, update='append')
 
-        self.viz.image(match_img, win=self.win_match, opts={'title':'Match Image'})
-        self.viz.image(pred_img, win=self.win_pred, opts={'title':'Predictions Image'})
-
-        self.viz.text(true_cl_str, win=self.text_window_tr)
-        self.viz.text(pred_cl_str, win=self.text_window_pred)
+        self.win_kp_pred_img = self.viz.image(kp_pred_img, win=self.win_kp_pred_img, opts={'title':'Keypoints Predicted Image'})
+        self.win_kp_gt_img = self.viz.image(kp_gt_img, win=self.win_kp_gt_img, opts={'title':'Keypoints GT Image'})
+        self.win_paf_pred_img = self.viz.image(paf_pred_img, win=self.win_paf_pred_img, opts={'title':'PAF Predicted Image'})
+        self.win_paf_gt_img = self.viz.image(paf_gt_img, win=self.win_paf_gt_img, opts={'title':'PAF GT Image'})
+        self.win_orig = self.viz.image(img, win=self.win_orig, opts={'title':'Original Image'})
 
         self.viz_counter += 1
