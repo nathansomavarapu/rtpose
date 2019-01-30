@@ -35,11 +35,11 @@ def main():
 
     epochs = 200
 
-    criterion = nn.MSELoss()
+    criterion = nn.MSELoss(reduction='sum')
     criterion = criterion.to(device)
 
     train_params = filter(lambda x: x.requires_grad, model.parameters())
-    opt = optim.Adam(train_params, lr=0.9)
+    opt = optim.Adam(train_params)
 
     viz = None
     if enable_viz:
@@ -60,8 +60,8 @@ def main():
             kp_loss = 0
             paf_loss = 0
             for (signal_kp, signal_paf) in intermediate_signals:
-                kp_loss += criterion(signal_kp, kp_gt)
-                paf_loss += criterion(signal_paf, paf_gt)
+                kp_loss = kp_loss + criterion(signal_kp, kp_gt)
+                paf_loss = paf_loss + criterion(signal_paf, paf_gt)
             
             curr_loss = kp_loss + paf_loss
 
@@ -82,7 +82,7 @@ def main():
 
                 viz.update_viz(kp_loss.item(), paf_loss.item(), img, write_tensor0, write_tensor1, write_tensor2, write_tensor3)
 
-    torch.save(model.state_dict(), 'rtpose.pt')
+        torch.save(model.state_dict(), 'rtpose.pt')
 
 if __name__ == '__main__':
     main()

@@ -63,7 +63,7 @@ def put_paf(point1, point2, paf_acc, theta, stride):
 
 class CocoPoseDataset:
 
-    def __init__(self, ann_dir, img_dir, size=(368, 368), end_size=(46,46), theta=1.0, sigma=7.0, stride=8):
+    def __init__(self, ann_dir, img_dir, enable_augs=True, size=(368, 368), end_size=(46,46), theta=1.0, sigma=7.0, stride=8):
         self.coco=COCO(ann_dir)
         self.imgs = self.coco.getImgIds()
         self.img_path = img_dir
@@ -74,6 +74,8 @@ class CocoPoseDataset:
         self.theta = theta
         self.stride = stride
 
+        self.enable_augs = enable_augs
+
         ia.seed(np.random.randint(1000))
 
         self.augmenter = iaa.Sequential([
@@ -81,7 +83,7 @@ class CocoPoseDataset:
             iaa.Affine(
                 scale={"x": (0.8, 1.2), "y": (0.8, 1.2)},
                 translate_percent={"x": (-0.2, 0.2), "y": (-0.2, 0.2)},
-                rotate=(-180, 180)
+                rotate=(-25, 125)
             )
         ])
     
@@ -116,8 +118,9 @@ class CocoPoseDataset:
 
         curr_img = cv2.resize(curr_img, self.img_size)
 
-        aug_det = self.augmenter.to_deterministic()
-        curr_img = aug_det.augment_image(curr_img)
+        if self.enable_augs:
+            aug_det = self.augmenter.to_deterministic()
+            curr_img = aug_det.augment_image(curr_img)
 
         curr_img = cv2.cvtColor(curr_img, cv2.COLOR_BGR2RGB)
         curr_img = curr_img.astype(np.float32)
@@ -191,12 +194,20 @@ class CocoPoseDataset:
             for limb in limbs_sorted:
                 curr_map = paf_maps[limb]/paf_counts[limb] if len(paf_counts[limb][paf_counts[limb] != 0]) != 0 else paf_maps[limb]
                 curr_map = curr_map.transpose(2,0,1)
-                cm1 = aug_det.augment_image(curr_map[0])
-                cm2 = aug_det.augment_image(curr_map[1])
+                if self.enable_augs:
+                    cm1 = aug_det.augment_image(curr_map[0])
+                    cm2 = aug_det.augment_image(curr_map[1])
 
-                paf_arr.append(np.stack([cm1, cm2]))
-
-            kp_arr_np = np.stack([aug_det.augment_image(x) for _, x in sorted(kp_maps.items(), key=lambda x: x[0])], axis=0)
+                    paf_arr.append(np.stack([cm1, cm2]))
+                else:
+                    paf_arr.append(curr_map)
+            kp_arr = []
+            for _, x in sorted(kp_maps.items(), key=lambda x: x[0]):
+                if self.enable_augs:
+                    kp_arr.append(aug_det.augment_image(x))
+                else:
+                    kp_arr.append(x)
+            kp_arr_np = np.stack(kp_arr , axis=0)
             paf_arr_np = np.concatenate(paf_arr)
         else:
             kp_arr_np = np.zeros((18, 46, 46))
@@ -208,11 +219,11 @@ class CocoPoseDataset:
 
 # base_path = '../data/'
 # cocoset = CocoPoseDataset(os.path.join(base_path, 'annotations2017', 'person_keypoints_train2017.json'), os.path.join(base_path, 'train2017'))
-# # rand_ind = np.random.randint(len(cocoset))
-# # print(rand_ind)
+# rand_ind = np.random.randint(len(cocoset))
+# print(rand_ind)
 
-# img, kp_gt, paf_gt = cocoset[97297]
-# img, kp_gt, paf_gt = cocoset[97297]
+# img, kp_gt, paf_gt = cocoset[rand_ind]
+# # img, kp_gt, paf_gt = cocoset[97297]
 
 # print(img.size(), kp_gt.size(), paf_gt.size())
 
